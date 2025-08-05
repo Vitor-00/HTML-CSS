@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cadastro Futurista</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #0d0d0d;
+      color: #00ffee;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: auto;
+      padding: 20px;
+    }
+
+    .card {
+      background: #1a1a1a;
+      border: 1px solid #00ffee;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 0 10px #00ffee80;
+    }
+
+    input, select, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 8px;
+      background: #111;
+      border: 1px solid #00ffee;
+      color: #00ffee;
+      border-radius: 5px;
+    }
+
+    button:hover {
+      background: #00ffee;
+      color: #111;
+    }
+
+    h1, h2 {
+      text-align: center;
+    }
+
+    .hidden { display: none; }
+
+    .row {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .row > div {
+      flex: 1;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+
+    th, td {
+      border: 1px solid #00ffee80;
+      padding: 8px;
+    }
+
+    input[type="file"] {
+      border: none;
+      padding: 5px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+
+    <!-- CADASTRO DE USUÁRIO -->
+    <div id="cadastroUsuario" class="card">
+      <h1>Cadastro de Usuário</h1>
+      <input id="novoUsuario" type="text" placeholder="Novo Usuário" />
+      <input id="novaSenha" type="password" placeholder="Nova Senha" />
+      <button onclick="cadastrarUsuario()">Cadastrar</button>
+    </div>
+
+    <!-- LOGIN -->
+    <div id="loginSection" class="card hidden">
+      <h1>Login</h1>
+      <input id="loginUser" type="text" placeholder="Usuário" />
+      <input id="loginPass" type="password" placeholder="Senha" />
+      <button onclick="login()">Entrar</button>
+    </div>
+
+    <!-- SISTEMA PRINCIPAL -->
+    <div id="mainSection" class="hidden">
+      <div class="card">
+        <h2>Cadastro de Plantão</h2>
+        <div class="row">
+          <div><input type="date" id="data" /></div>
+          <div><input type="text" id="unidade" placeholder="Unidade" /></div>
+          <div><input type="text" id="chefe" placeholder="Chefe de Plantão" /></div>
+        </div>
+
+        <h3 style="margin-top: 20px;">Agentes</h3>
+        <div id="agentesContainer"></div>
+
+        <div class="row" style="margin-top: 20px;">
+          <button onclick="salvar()">Salvar</button>
+          <button onclick="exportar()">Exportar</button>
+          <label>
+            Importar:
+            <input type="file" id="importarArquivo" onchange="importar()" />
+          </label>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Relatório</h2>
+        <table id="relatorio">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Unidade</th>
+              <th>Chefe</th>
+              <th>Agentes</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const cadastroUsuario = document.getElementById('cadastroUsuario');
+    const loginSection = document.getElementById('loginSection');
+    const mainSection = document.getElementById('mainSection');
+
+    // Função de criptografia simples (Base64)
+    function encode(str) {
+      return btoa(unescape(encodeURIComponent(str)));
+    }
+
+    function decode(str) {
+      return decodeURIComponent(escape(atob(str)));
+    }
+
+    // Cadastro de usuário
+    function cadastrarUsuario() {
+      const user = document.getElementById('novoUsuario').value;
+      const pass = document.getElementById('novaSenha').value;
+
+      if (!user || !pass) {
+        alert("Preencha usuário e senha.");
+        return;
+      }
+
+      const users = JSON.parse(localStorage.getItem('usuarios') || '{}');
+
+      if (users[user]) {
+        alert("Usuário já existe.");
+        return;
+      }
+
+      users[user] = encode(pass);
+      localStorage.setItem('usuarios', JSON.stringify(users));
+      alert("Usuário cadastrado com sucesso!");
+
+      cadastroUsuario.classList.add('hidden');
+      loginSection.classList.remove('hidden');
+    }
+
+    // Login
+    function login() {
+      const user = document.getElementById('loginUser').value;
+      const pass = document.getElementById('loginPass').value;
+
+      const users = JSON.parse(localStorage.getItem('usuarios') || '{}');
+
+      if (users[user] && decode(users[user]) === pass) {
+        localStorage.setItem('usuarioLogado', user);
+        loginSection.classList.add('hidden');
+        mainSection.classList.remove('hidden');
+        carregarRelatorio();
+      } else {
+        alert("Usuário ou senha incorretos.");
+      }
+    }
+
+    // Agentes
+    function criarCamposAgentes() {
+      const container = document.getElementById('agentesContainer');
+      container.innerHTML = '';
+      for (let i = 1; i <= 10; i++) {
+        const row = document.createElement('div');
+        row.classList.add('row');
+        row.innerHTML = `
+          <div><input type="text" placeholder="Nome Agente ${i}" class="nomeAgente"></div>
+          <div><input type="text" placeholder="Matrícula ${i}" class="matriculaAgente"></div>
+        `;
+        container.appendChild(row);
+      }
+    }
+
+    criarCamposAgentes();
+
+    function salvar() {
+      const data = document.getElementById('data').value;
+      const unidade = document.getElementById('unidade').value;
+      const chefe = document.getElementById('chefe').value;
+
+      const nomes = document.querySelectorAll('.nomeAgente');
+      const matriculas = document.querySelectorAll('.matriculaAgente');
+
+      const agentes = [];
+      for (let i = 0; i < nomes.length; i++) {
+        const nome = nomes[i].value.trim();
+        const matricula = matriculas[i].value.trim();
+        if (nome && matricula) {
+          agentes.push({ nome, matricula });
+        }
+      }
+
+      const novoCadastro = { data, unidade, chefe, agentes };
+      let cadastros = JSON.parse(localStorage.getItem('cadastros') || '[]');
+      cadastros.push(novoCadastro);
+      localStorage.setItem('cadastros', JSON.stringify(cadastros));
+      alert("Cadastro salvo!");
+      carregarRelatorio();
+    }
+
+    function carregarRelatorio() {
+      const tbody = document.querySelector('#relatorio tbody');
+      tbody.innerHTML = '';
+      const cadastros = JSON.parse(localStorage.getItem('cadastros') || '[]');
+
+      for (const cad of cadastros) {
+        const row = document.createElement('tr');
+        const agentesTexto = cad.agentes.map(a => `${a.nome} (${a.matricula})`).join('<br>');
+        row.innerHTML = `
+          <td>${cad.data}</td>
+          <td>${cad.unidade}</td>
+          <td>${cad.chefe}</td>
+          <td>${agentesTexto}</td>
+        `;
+        tbody.appendChild(row);
+      }
+    }
+
+    function exportar() {
+      const cadastros = localStorage.getItem('cadastros') || '[]';
+      const blob = new Blob([cadastros], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'cadastros.json';
+      a.click();
+    }
+
+    function importar() {
+      const file = document.getElementById('importarArquivo').files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        try {
+          const dados = JSON.parse(e.target.result);
+          if (Array.isArray(dados)) {
+            localStorage.setItem('cadastros', JSON.stringify(dados));
+            alert('Importado com sucesso!');
+            carregarRelatorio();
+          } else {
+            throw new Error('Formato inválido');
+          }
+        } catch {
+          alert('Erro ao importar dados.');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    // Inicialização
+    const usuarios = JSON.parse(localStorage.getItem('usuarios') || '{}');
+    if (Object.keys(usuarios).length > 0) {
+      cadastroUsuario.classList.add('hidden');
+      loginSection.classList.remove('hidden');
+    }
+
+    if (localStorage.getItem('usuarioLogado')) {
+      cadastroUsuario.classList.add('hidden');
+      loginSection.classList.add('hidden');
+      mainSection.classList.remove('hidden');
+      carregarRelatorio();
+    }
+  </script>
+</body>
+</html>

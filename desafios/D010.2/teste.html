@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Livro de Ocorrência Operaconal</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    max-width: 900px;
+    margin: 20px auto;
+    background: #f9f9f9;
+    padding: 15px;
+    border-radius: 8px;
+  }
+  h1 {
+    text-align: center;
+  }
+  form {
+    background: white;
+    padding: 20px;
+    border-radius: 6px;
+    box-shadow: 0 0 8px rgba(0,0,0,0.1);
+  }
+  label {
+    display: block;
+    margin-top: 10px;
+    font-weight: bold;
+  }
+  input[type="text"], input[type="date"], input[type="number"] {
+    width: 100%;
+    padding: 6px;
+    margin-top: 5px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+  }
+  .agente-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+  }
+  .agente-row input {
+    flex: 1;
+  }
+  button {
+    margin-top: 15px;
+    padding: 10px 15px;
+    font-size: 16px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  button:hover {
+    background-color: #0056b3;
+  }
+  .lista-cadastros {
+    margin-top: 30px;
+  }
+  .data-section {
+    background: #fff;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    box-shadow: 0 0 6px rgba(0,0,0,0.1);
+    padding: 15px;
+  }
+  .data-section h3 {
+    margin-top: 0;
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .data-section h3 button {
+    font-size: 12px;
+    padding: 3px 7px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+  }
+  th, td {
+    border: 1px solid #ddd;
+    padding: 6px;
+    text-align: left;
+  }
+  th {
+    background-color: #f1f1f1;
+  }
+</style>
+</head>
+<body>
+
+<h1>Cadastro de Plantão</h1>
+
+<form id="formCadastro">
+  <label for="dataPlantao">Data do Plantão:</label>
+  <input type="date" id="dataPlantao" name="dataPlantao" required />
+
+  <label for="chefePlantao">Chefe de Plantão:</label>
+  <input type="text" id="chefePlantao" name="chefePlantao" required />
+
+  <label for="unidade">Unidade:</label>
+  <input type="text" id="unidade" name="unidade" required />
+
+  <label for="diretorUnidade">Diretor da Unidade:</label>
+  <input type="text" id="diretorUnidade" name="diretorUnidade" required />
+
+  <fieldset style="margin-top: 15px; border: 1px solid #ccc; padding: 10px; border-radius: 5px;">
+    <legend><strong>Agentes (Nome e Matrícula)</strong></legend>
+
+    <div id="agentesContainer">
+      <!-- Campos gerados pelo JS -->
+    </div>
+  </fieldset>
+
+  <button type="submit">Salvar</button>
+</form>
+
+<div class="lista-cadastros" id="listaCadastros">
+  <h2>Cadastros Salvos</h2>
+  <!-- Aqui aparecerão os cadastros agrupados por data -->
+</div>
+
+<script>
+  const agentesContainer = document.getElementById('agentesContainer');
+  const form = document.getElementById('formCadastro');
+  const listaCadastros = document.getElementById('listaCadastros');
+
+  // Criar 10 campos agentes com nome e matrícula
+  for(let i=1; i<=10; i++) {
+    const div = document.createElement('div');
+    div.classList.add('agente-row');
+
+    const inputNome = document.createElement('input');
+    inputNome.type = 'text';
+    inputNome.name = `agenteNome${i}`;
+    inputNome.placeholder = `Nome do Agente ${i}`;
+    inputNome.autocomplete = 'off';
+
+    const inputMatricula = document.createElement('input');
+    inputMatricula.type = 'text';
+    inputMatricula.name = `agenteMatricula${i}`;
+    inputMatricula.placeholder = `Matrícula ${i}`;
+    inputMatricula.autocomplete = 'off';
+
+    div.appendChild(inputNome);
+    div.appendChild(inputMatricula);
+    agentesContainer.appendChild(div);
+  }
+
+  // Função para salvar cadastro no localStorage
+  function salvarCadastro(cadastro) {
+    let cadastros = JSON.parse(localStorage.getItem('cadastrosPlantao')) || [];
+    cadastros.push(cadastro);
+    localStorage.setItem('cadastrosPlantao', JSON.stringify(cadastros));
+  }
+
+  // Função para carregar e exibir os cadastros agrupados por data
+  function mostrarCadastros() {
+    let cadastros = JSON.parse(localStorage.getItem('cadastrosPlantao')) || [];
+    listaCadastros.innerHTML = '<h2>Cadastros Salvos</h2>';
+
+    if (cadastros.length === 0) {
+      listaCadastros.innerHTML += '<p>Nenhum cadastro salvo.</p>';
+      return;
+    }
+
+    // Agrupar por data
+    const agrupados = {};
+    cadastros.forEach(cad => {
+      if (!agrupados[cad.dataPlantao]) agrupados[cad.dataPlantao] = [];
+      agrupados[cad.dataPlantao].push(cad);
+    });
+
+    // Criar seções para cada data
+    for (const data in agrupados) {
+      const secao = document.createElement('div');
+      secao.classList.add('data-section');
+
+      // Cabeçalho com data e botão para mostrar/ocultar
+      const h3 = document.createElement('h3');
+      h3.textContent = `Data: ${data}`;
+
+      const btnToggle = document.createElement('button');
+      btnToggle.textContent = 'Mostrar/Ocultar';
+      h3.appendChild(btnToggle);
+
+      secao.appendChild(h3);
+
+      // Tabela com os cadastros desse dia
+      const tabela = document.createElement('table');
+      tabela.style.display = 'none';
+
+      const thead = document.createElement('thead');
+      thead.innerHTML = `<tr>
+        <th>Chefe de Plantão</th>
+        <th>Unidade</th>
+        <th>Diretor</th>
+        <th>Agentes (Nome - Matrícula)</th>
+      </tr>`;
+      tabela.appendChild(thead);
+
+      const tbody = document.createElement('tbody');
+
+      agrupados[data].forEach(cad => {
+        const tr = document.createElement('tr');
+
+        tr.innerHTML = `
+          <td>${cad.chefePlantao}</td>
+          <td>${cad.unidade}</td>
+          <td>${cad.diretorUnidade}</td>
+          <td>${cad.agentes.map(a => `${a.nome} - ${a.matricula}`).filter(a => a.trim() !== ' - ').join('<br>')}</td>
+        `;
+
+        tbody.appendChild(tr);
+      });
+
+      tabela.appendChild(tbody);
+      secao.appendChild(tabela);
+
+      // Toggle tabela ao clicar no botão
+      btnToggle.addEventListener('click', () => {
+        tabela.style.display = tabela.style.display === 'none' ? 'table' : 'none';
+      });
+
+      listaCadastros.appendChild(secao);
+    }
+  }
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    // Pegar valores do formulário
+    const dataPlantao = form.dataPlantao.value;
+    const chefePlantao = form.chefePlantao.value.trim();
+    const unidade = form.unidade.value.trim();
+    const diretorUnidade = form.diretorUnidade.value.trim();
+
+    // Agentes
+    const agentes = [];
+    for(let i=1; i<=10; i++) {
+      const nome = form[`agenteNome${i}`].value.trim();
+      const matricula = form[`agenteMatricula${i}`].value.trim();
+      // Só salvar se pelo menos um dos dois campos tiver valor
+      if (nome !== '' || matricula !== '') {
+        agentes.push({nome, matricula});
+      }
+    }
+
+    if (!dataPlantao || !chefePlantao || !unidade || !diretorUnidade) {
+      alert('Por favor, preencha todos os campos principais.');
+      return;
+    }
+
+    // Criar objeto cadastro
+    const cadastro = {
+      dataPlantao,
+      chefePlantao,
+      unidade,
+      diretorUnidade,
+      agentes
+    };
+
+    salvarCadastro(cadastro);
+    alert('Cadastro salvo com sucesso!');
+    form.reset();
+    mostrarCadastros();
+  });
+
+  // Mostrar os cadastros quando carregar a página
+  mostrarCadastros();
+
+</script>
+
+</body>
+</html>

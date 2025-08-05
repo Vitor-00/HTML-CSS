@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Desafio</title>
+    <style>
+        body{
+            background-color: beige;
+        }
+    </style>
+    <link rel="shortcut icon" href="HTML.ico" type="image/x-icon">
+</head>
+<body>
+    <h1>Página de Imagens</h1>
+    <p>Aqui podemos ver a imagem flexível</p>
+    <picture><!--tag para colocar imagem picture-->
+        <source media="(max-width: 750px)" srcset="imagens/foto-p.png" type="image/png">
+        <source media="(max-width: 1050px)" srcset="imagens/foto-m.png" type="image/png">
+        <img src="imagens/foto-g.png" alt="imagem flexível">
+    </picture>
+    <ul>
+        <li><a href="pag03.html">Acessar para assistir o vídeo</a></li>
+        <li><a href="pag02.html">Acessar para ouvir o áudio</a></li>
+    </ul>
+</body>
+</html>
